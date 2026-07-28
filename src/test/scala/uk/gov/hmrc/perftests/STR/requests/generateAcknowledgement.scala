@@ -21,14 +21,19 @@ import io.gatling.core.structure.ChainBuilder
 import io.gatling.http.Predef._
 import uk.gov.hmrc.perftests.Common._
 
-class Acknowledge {
+class generateAcknowledgement {
 
   private val strAcknowledgeURL: String = s"$baseUrl/acknowledge/#{vrn}/:reportId/:correlationId"
 
-  val retrieveSTR: ChainBuilder = exec(http("Retrieve STR")
+  val postSTRAcknowledgement: ChainBuilder =
+    exec { session =>
+      session
+        .set("reportId", "7f06cde7-fe53-45a8-80e3-6235fb1bb308")
+        .set("correlationId", "8DDE35FBA292AC08993365178B936865AA5F7480496DBDA33B3CD1E1FD08B0E8")
+    }
+    .exec(http("Retrieve STR")
     .get(strAcknowledgeURL)
     .headers(commonHeaders)
     .headers(Map("Gov-Test-Scenario" -> "MULTIPLE_FEEDBACK"))
     .check(status.is(200)))
-
 }

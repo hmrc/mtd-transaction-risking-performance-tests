@@ -17,24 +17,35 @@
 package uk.gov.hmrc.perftests.simulations.STRSimulation
 
 import uk.gov.hmrc.performance.simulation.PerformanceTestRunner
-import uk.gov.hmrc.perftests.STR.requests.utils.Request
 import io.gatling.core.Predef._
+import uk.gov.hmrc.perftests.STR.requests.generateAcknowledgement
+import uk.gov.hmrc.perftests.STR.requests.utils.generateRequest
 
 class STRSimulation extends PerformanceTestRunner {
 
-  val request = new Request()
+  val request = new generateRequest()
+  val acknowledge = new generateAcknowledgement()
 
-  val scn = scenario("STR Performance Test")
+  val requestSCN = scenario("STR Performance Test")
     .exec(session => session.set("bearerToken", "your-token-here"))
     .exec(request.generateVrn)
     .exec { session =>
       println("VRN being used: " + session("vrn").as[String])
       session
     }
-    .exec(request.postSTR)
+    .exec(request.postSTRRequest)
+
+  val acknowledgetSCN = scenario("STR Performance Test")
+    .exec(session => session.set("bearerToken", "your-token-here"))
+    .exec(request.generateVrn)
+    .exec { session =>
+      println("VRN being used: " + session("vrn").as[String])
+      session
+    }
+    .exec(acknowledge.postSTRAcknowledgement)
 
   setUp(
-    scn.inject(
+    requestSCN.inject(
       atOnceUsers(1)
     )
   )

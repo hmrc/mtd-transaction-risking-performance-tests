@@ -23,7 +23,7 @@ import io.gatling.http.Predef._
 import uk.gov.hmrc.perftests.Common._
 import uk.gov.hmrc.perftests.utils.TestData
 
-class Request {
+class generateRequest {
 
   private val strRequestURL: String = s"$baseUrl/assist/#{vrn}"
 
@@ -32,13 +32,7 @@ class Request {
       session.set("vrn", "123456789")
     }
 
-  val postSTR: ChainBuilder =
-    exec { session =>
-      val finalUrl = strRequestURL.replace("#{vrn}", session("vrn").as[String])
-      println("Final URL sent: " + finalUrl)
-      session
-    }
-    .exec(http("Post STR")
+  val postSTRRequest: ChainBuilder = exec(http("Post STR")
     .post(strRequestURL)
     .body(StringBody(authPayload()))
     .headers(commonHeaders)
@@ -69,9 +63,6 @@ class Request {
          |  "totalAcquisitionsExVAT": 3000
          | }
      """.stripMargin
-
-    //    these tests aren't operational yet. Leaving this println here for debugging purposes. please remove once the tests pass
-    //     println("\n"+affinityGroup+":\n"+authPayload+"\n")
     authPayload
   }
 }
