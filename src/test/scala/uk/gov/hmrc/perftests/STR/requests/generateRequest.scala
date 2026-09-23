@@ -25,7 +25,7 @@ import uk.gov.hmrc.perftests.utils.TestData
 
 class generateRequest {
 
-  private val strRequestURL: String = s"$baseUrl/assist/#{vrn}"
+  private val strRequestURL: String = s"$baseUrl/feedback/#{vrn}"
 
   val generateVrn: ChainBuilder =
     exec { session =>
@@ -36,7 +36,7 @@ class generateRequest {
     .post(strRequestURL)
     .body(StringBody(authPayload()))
     .headers(commonHeaders)
-    .headers(Map("Gov-Test-Scenario" -> "MULTIPLE_FEEDBACK"))
+    // .headers(Map("Gov-Test-Scenario" -> "MULTIPLE_FEEDBACK"))
     .check(status.is(201))
     .check(bodyString.saveAs("responseBody"))
   )

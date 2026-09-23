@@ -23,7 +23,7 @@ import uk.gov.hmrc.perftests.Common._
 
 class generateAcknowledgement {
 
-  private val strAcknowledgeURL: String = s"$baseUrl/acknowledge/#{vrn}/:reportId/:correlationId"
+  private val strAcknowledgeURL: String = s"$baseUrl/acknowledge/#{vrn}/:reportId/:correlationId?presentedDateTime=2026-06-09T10:30:00Z"
 
   val postSTRAcknowledgement: ChainBuilder =
     exec { session =>
@@ -34,6 +34,6 @@ class generateAcknowledgement {
     .exec(http("Retrieve STR")
     .get(strAcknowledgeURL)
     .headers(commonHeaders)
-    .headers(Map("Gov-Test-Scenario" -> "MULTIPLE_FEEDBACK"))
+    //.headers(Map("Gov-Test-Scenario" -> "MULTIPLE_FEEDBACK"))
     .check(status.is(200)))
 }
