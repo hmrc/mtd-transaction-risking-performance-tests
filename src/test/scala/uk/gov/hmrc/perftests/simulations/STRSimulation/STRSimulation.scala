@@ -21,9 +21,6 @@ import io.gatling.core.Predef._
 
 class STRSimulation extends PerformanceTestRunner {
 
-  val request = new generateRequest()
-  val acknowledge = new generateAcknowledgement()
-
   val requestSCN = scenario("STR Performance Test")
     .exec(session => session.set("bearerToken", "your-token-here"))
     .exec(request.generateVrn)

@@ -14,7 +14,7 @@ object Workload {
 
   val annualReturns = Settings.number("annualReturns", 9200000)
   val yearOneUptake = fraction("yearOneUptake", .51)
-  val matureUptake = fraction("matreUptake", .67)
+  val matureUptake = fraction("matureUptake", .67)
   val feedbackFraction = fraction("feedbackFraction", .10)
 
   require(
@@ -118,14 +118,14 @@ object Workload {
         expected("rds_generate", "calls/second", _.feedbackEndpointRps),
         expected("rds_acknowledge", "calls/seconds", _.acknowledgementRps),
         expected("rds_shared", "calls/second",_.apiRps),
-        expected("nrs_request_event", "events/second" _.feedbackRps),
+        expected("nrs_request_event", "events/second", _.feedbackRps),
         expected("nrs_response_event", "events/second", _.feedbackRps),
         expected("ns_acknowledgment_event", "events/second", _.feedbackRps),
         expected("nrs_total", "events/second", _.nrsRps),
-        expected("rsd_total", "submissions/second" _.rsdRps)
+        expected("rsd_total", "submissions/second", _.rsdRps)
       )
 
-      Files.createDirectory(directory)
+      Files.createDirectories(directory)
       Files.write(directory.resolve("workload.csv"), rows.asJava, UTF_8)
     }
 }
