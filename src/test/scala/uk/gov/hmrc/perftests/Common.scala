@@ -19,22 +19,5 @@ package uk.gov.hmrc.perftests
 import uk.gov.hmrc.performance.conf.ServicesConfiguration
 
 object Common extends ServicesConfiguration {
-
   val baseUrl: String = baseUrlFor("mtd-transaction-risking")
-
-  val Individual: String = "Individual"
-  val Organisation: String = "Organisation"
-  val Agent: String = "Agent"
-
-  val commonHeaders: Map[String, String] =
-    Map("Accept" -> s"application/vnd.hmrc.1.0+json",
-      "User-Agent" -> "mtd-transaction-risking",
-      "X-Correlation-Id" -> "test-correlation-id",
-      "Authorization" -> s"#{bearerToken}",
-      "Content-Type" -> "application/json")
-
-  val headersInsolvent: Map[String, String] =
-    Map("Accept" -> s"application/vnd.hmrc.1.0+json",
-      "Content-Type" -> "application/json")
-
 }
