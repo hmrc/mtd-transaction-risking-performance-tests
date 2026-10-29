@@ -58,6 +58,11 @@ object Settings extends Configuration {
     )
 
   require(
+    Set("downstream-stub", "integrated", "shortcut-stub")(topology),
+    "Set api.topology explicitly for remote tests"
+  )
+
+  require(
     topology != "shortcut-stub" || smoke,
     "Shortcut stubs are only suitable for smoke tests"
   )
@@ -72,10 +77,7 @@ object Settings extends Configuration {
   val data = readProperty("testData.normal", "data/local.csv")
 
   val dataB =
-    readProperty("test.consumerB", "data/private-consumer-b.csv")
-
-  val noFeedbackData =
-    readProperty("test.noFeedback", "data/no-feedback.csv")
+    readProperty("testData.consumerB", "data/private-consumer-b.csv")
 
   val timeout = seconds("timeoutSeconds", 10)
   val p95 = number("p95Ms", 1000)
@@ -103,7 +105,7 @@ object Settings extends Configuration {
 
   if (label == "downstream-limits" && !smoke) {
     require(
-      text("limitConfigured", "false").toBoolean,
+      text("limiterConfigured", "false").toBoolean,
       "Configure a downstream limiter first"
     )
     number("downstreamLimitRps", 0)

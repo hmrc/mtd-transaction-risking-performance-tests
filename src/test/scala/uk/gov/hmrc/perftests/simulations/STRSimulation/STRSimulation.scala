@@ -18,8 +18,6 @@ package uk.gov.hmrc.perftests.simulations.STRSimulation
 
 import uk.gov.hmrc.performance.simulation.PerformanceTestRunner
 import io.gatling.core.Predef._
-import uk.gov.hmrc.perftests.STR.requests.generateAcknowledgement
-import uk.gov.hmrc.perftests.STR.requests.utils.generateRequest
 
 class STRSimulation extends PerformanceTestRunner {
 
