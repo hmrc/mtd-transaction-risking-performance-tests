@@ -52,7 +52,7 @@ class STRSimulation extends PerformanceTestRunner {
   register("prepare-b", Requests.prepare("B"))
   register("feedback", Requests.feedback())
   register("no-feedback", Requests.feedback(noFeedback = true))
-  register("acknowledgement", Requests.acknowledge)
+  register("acknowledge", Requests.acknowledge)
 
   private def consumer(i: Int): String = if (selected(i).parts.contains("prepare-b")) "B" else "A"
   private val endpoints = selected.map(_.parts.collect {
@@ -63,7 +63,7 @@ class STRSimulation extends PerformanceTestRunner {
   private def cost(i: Int): Int = endpoints(i).size
   private def policyFor(client: String, policy: String): String = if (client == "A") policy else "success"
   private def plan(name: String, rates: Seq[Double], seconds: Int, effective: Double,
-                   policy: String = "successful"): Unit = {
+                   policy: String = "success"): Unit = {
     selected.indices.groupBy(consumer).foreach { case (client, indexes) =>
       val counts = indexes.flatMap { i =>
         val count = (rates(i) * effective).toLong
@@ -84,7 +84,7 @@ class STRSimulation extends PerformanceTestRunner {
     Measurements.assess(name)
     Measurements.write()
     // A failed spike must still run recovery before the test fails
-    session.set("criteriaFailed", Measurements.hasFailures && !(c.label == "spike" && name = "spike"))
+    session.set("criteriaFailed", Measurements.hasFailures && !(c.label == "spike" && name == "spike"))
   }.crashLoadGeneratorIf("Measured criteria failed; see target/evidence", s => s("criteriaFailed").as[Boolean])
     .inject(atOnceUsers(1))
 
@@ -116,16 +116,16 @@ class STRSimulation extends PerformanceTestRunner {
     val stages = c.label match {
       case "spike" =>
         stage("baseline", rates, duration) ++
-          stage("spike", rates.map(_ * c.number("spikeMultiplier", 4)), c.seconds("spikeSeconds", 30))
-          stage("recovery", rates, recovery )
+          stage("spike", rates.map(_ * c.number("spikeMultiplier", 4)), c.seconds("spikeSeconds", 30)) ++
+          stage("recovery", rates, recovery)
       case "capacity" =>
         val start = c.number("capacityStart", .25)
         val step = c.number("capacityStep", .25)
         val ceiling = c.number("capacityCeiling", 2)
         require(start <= ceiling && (ceiling - start) / step <= 100, "Use at most 101 capacity stages")
-        Iterator.iterate(start)(_ + step).takeWhile((_ <= ceiling + 1e-9).toVector.zipWithIndex.flatMap)
-      case (factor, i) => stage(f"capacity-${i + 1}%03d", rates.map(_ * factor), duration)
-      }
+        Iterator.iterate(start)(_ + step).takeWhile(_ <= ceiling + 1e-9).toVector.zipWithIndex.flatMap {
+          case (factor, i) => stage(f"capacity-${i+1}%03d", rates.map(_ * factor), duration)
+        }
     case "consumer-limits" =>
       val window = c.seconds("limitWindowSeconds", 0)
       val seconds = math.max(duration, window * 3)
@@ -137,7 +137,7 @@ class STRSimulation extends PerformanceTestRunner {
         stage("boundary", clients(1), seconds, "boundary") ++
         stage("above", clients(1.5), seconds, "throttle") ++
         quiet("quota-reset", window * 2) ++ stage("recovery", clients(.5), seconds)
-    case "downsteam-limits" =>
+    case "downstream-limits" =>
       val limit = c.number("downstreamLimitRps", 0)
       stage("baseline", Seq(limit * .5), duration) ++
         stage("overload", Seq(limit * 2), duration, "downstream") ++
@@ -147,7 +147,7 @@ class STRSimulation extends PerformanceTestRunner {
       val seconds = (rampUpTime + constantRateTime + rampDownTime).toSeconds.toInt
       val effective = constantRateTime.toSeconds + (rampUpTime + rampDownTime).toSeconds / 2d
       plan("run", rates, seconds, effective)
-      Seq(super.withInjectedLoad(modelled), Seq("run")))
+      Seq(super.withInjectedLoad(modelled), Seq(gate("run")))
   }
   val root = scenario("coordinator").pause(1.millisecond).inject(atOnceUsers(1))
   Seq(stages.foldLeft(root)((previous, next) => previous.andThen(next: _*)))

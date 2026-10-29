@@ -317,7 +317,7 @@ object Measurements {
     csv(
       "metrics.csv",
       "phase,consumer,endpoint,window,seconds,planned_rps,policy," +
-        "started,completed,good,bad_checks_http_0,http_200,http_204," +
+        "started,completed,good,bad_checks,http_0,http_200,http_204," +
         "http_429,http_500,http_503,other_status,p95_ms,p99_ms",
       metrics
     )
@@ -419,7 +419,7 @@ object Measurements {
       lines(
         "run.properties",
         Seq(
-          s"profiles=${Settings.profile}",
+          s"profile=${Settings.profile}",
           s"topology=${Settings.topology}",
           s"p95Ms=${Settings.p95}",
           s"p99Ms=${Settings.p99}",
@@ -432,13 +432,12 @@ object Measurements {
           s"baseTargetNrsEventsPerSecond=${Workload.target.nrsRps}",
           s"annualReturns=${Workload.annualReturns}",
           s"uptake=${Workload.target.uptake}",
-          s"feedbackFractions=${Workload.feedbackFraction}",
+          s"feedbackFraction=${Workload.feedbackFraction}",
           s"feedbackIterations=${Workload.feedbackIterations}",
           s"noFeedbackIterations=${Workload.noFeedbackIterations}",
           s"peakMonthFraction=${Workload.peakMonthFraction}",
-          s"peakWindowFraction=${Workload.peakWindowHours}",
-          "asyncEventsCounts=expected-from-successful-api-responses-not-observed-deliveries"
-
+          s"peakWindowHours=${Workload.peakWindowHours}",
+          "asyncEventCounts=expected-from-successful-api-responses-not-observed-deliveries"
         )
       )
 }
