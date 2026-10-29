@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.perftests
 
 import java.nio.charset.StandardCharsets.UTF_8
@@ -57,7 +73,7 @@ object Measurements {
     val counts = new ConcurrentHashMap[(String, Int), Counts]()
 
     def actualSeconds: Double =
-      if (first.get() == 0) Od
+      if (first.get() == 0) 0d
       else (last.get() - first.get()) / 1e9
 
     def seconds: Double =
@@ -73,12 +89,12 @@ object Measurements {
 
     def started: Long = sum(_.started.sum())
 
-    def completed: Long = sum(_.started.sum())
+    def completed: Long = sum(_.completed.sum())
 
     def good: Long = sum(_.good.sum())
 
-    def goodFor(endpoint: String): Seq[Counts] =
-      Option(counts.get(endpoint -> -1)).fold(OL)(_.good.sum())
+    def goodFor(endpoint: String): Long =
+      Option(counts.get(endpoint -> -1)).fold(0L)(_.good.sum())
 
     def buckets(endpoint: String): Seq[Counts] = {
       val now = System.nanoTime()
@@ -101,7 +117,7 @@ object Measurements {
 
   private val requestErrorPct =
     Settings.readProperty(
-      "perftes.requestPercentageFailureThreshold",
+      "perftest.requestPercentageFailureThreshold",
       "1"
     ).toDouble
 
@@ -301,7 +317,7 @@ object Measurements {
     csv(
       "metrics.csv",
       "phase,consumer,endpoint,window,seconds,planned_rps,policy," +
-        "started,completed,good,bad_checks_http_0,http_200,_http_204," +
+        "started,completed,good,bad_checks_http_0,http_200,http_204," +
         "http_429,http_500,http_503,other_status,p95_ms,p99_ms",
       metrics
     )
@@ -323,7 +339,7 @@ object Measurements {
 
       phaseRuns.map { run =>
         val decision = Option(decisions.get(phase))
-          .map(d => if (d = "PASS") "PASS" else "FAIL")
+          .map(d => if (d == "PASS") "PASS" else "FAIL")
           .getOrElse(if (run.started == 0) "NOT_RUN" else "NOT_ASSESSED")
 
         val feedback = run.goodFor("feedback")
@@ -350,13 +366,13 @@ object Measurements {
     csv(
       "stage-summary.csv",
       "phase,consumer,planned_rps,attempted_rps,successful_rps,requests," +
-        "completed,good,seconds,decision,expected,nrs_events," +
+        "completed,good,seconds,decision,expected_nrs_events," +
         "expected_rsd_events,cumulative_phase_requests",
       stages
     )
 
     lines(
-      "decision.txt",
+      "decisions.txt",
       decisions.asScala.toSeq.sortBy(_._1).map{
         case (phase, result) => s"$phase: $result"
       }
@@ -375,7 +391,7 @@ object Measurements {
         phases.takeWhile(p => Option(decisions.get(p)).contains("PASS"))
           .lastOption.getOrElse("none")
 
-      val outcome = {
+      val outcome =
         if (failed.nonEmpty) "ACCEPTANCE_CRITERIA_BREACHED"
         else if (
           phases.nonEmpty &&
@@ -412,6 +428,7 @@ object Measurements {
           s"windowSeconds=${Settings.window}",
           s"loadPercentage=${Settings.readProperty("perftest.loadPercentage", "100")}",
           s"demand=${Workload.target.name}",
+          s"baseTargetApiRps=${Workload.target.apiRps}",
           s"baseTargetNrsEventsPerSecond=${Workload.target.nrsRps}",
           s"annualReturns=${Workload.annualReturns}",
           s"uptake=${Workload.target.uptake}",

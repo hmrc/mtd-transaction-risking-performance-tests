@@ -16,17 +16,13 @@
 
 package uk.gov.hmrc.perftests.simulations.STRSimulation
 
-import com.github.benmanes.caffeine.cache.Policy
 import uk.gov.hmrc.performance.simulation.{Journey, PerformanceTestRunner}
 import io.gatling.core.Predef._
-import io.gatling.core.structure
 import io.gatling.core.structure.{ChainBuilder, PopulationBuilder}
 import io.gatling.http.Predef._
-import io.gatling.http.protocol.HttpProtocolBuilder
 import uk.gov.hmrc.perftests.{Common, Measurements, Requests, Settings, Workload}
 
 import scala.concurrent.duration._
-import scala.reflect.internal.util.ReusableInstance
 
 class STRSimulation extends PerformanceTestRunner {
   private val c = Settings
