@@ -74,8 +74,25 @@ object Authentication {
         override def run(): Unit = if (problem.isEmpty) {
           try users.foreach { case (vrn, cred) => login(vrn, cred) }
           catch {
-            case NonFatal(_) =>
-              problem = Some("Test login refresh failed; check the login service")
+            case NonFatal(error) =>
+              val message = Option(error.getMessage).getOrElse("")
+
+              val safeDetail =
+                if (message.matches(
+                  "requirement failed: Test login failed: HTTP [0-9]{3}"
+                ))
+                  message.stripPrefix("requirement failed: ")
+                else if (
+                  message ==
+                    "requirement failed: Test login returned no valid Authorisation header"
+                )
+                  "Test login returned no valid Authorisation header"
+                else
+                  error.getClass.getSimpleName
+
+              val failure = s"Test login refresh failed: $safeDetail"
+              problem = Some(failure)
+              System.err.println(failure)
           }
         }
       }, interval, interval, TimeUnit.SECONDS)
