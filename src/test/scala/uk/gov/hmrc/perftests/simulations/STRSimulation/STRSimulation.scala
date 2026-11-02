@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.perftests.simulations.STRSimulation
 
+import scala.util.Try
 import uk.gov.hmrc.performance.simulation.{Journey, PerformanceTestRunner}
 import io.gatling.core.Predef._
 import io.gatling.core.structure.{ChainBuilder, PopulationBuilder}
@@ -192,7 +193,7 @@ class STRSimulation extends PerformanceTestRunner {
 }
 
   before {
-    println(s"Profile: ${c.profile}; setup: ${c.topology"}; target: ${Common.baseUrl}${c.prefix}")
+    println(s"Profile: ${c.profile}; setup: ${c.topology}; target: ${Common.baseUrl}${c.prefix}")
     Authentication.start(records)
     Workload.write(c.out)
   }

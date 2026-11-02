@@ -47,8 +47,8 @@ object Requests {
       require(
         value("periodKey").matches("[a-zA-Z0-9#]{4}"),
         s"Invalid periodKey in $path"
-          row
       )
+      row
     }
   }
 
@@ -159,20 +159,17 @@ object Requests {
   }
 
   def acknowledge: ChainBuilder = {
-    exec(begin("acknowledgement"))
-      .exec(
-        post(
+    val request = post(
           "acknowledgement",
           "/acknowledge/#{vrn}/#{reportId}/#{correlationId}"
         )
           .queryParam("presentedDateTime", _ => Instant.now().toString)
           .check(status.is(204))
-      )
 
-  if (Settings.experiment)
-      exec(begin("acknowledgment")).exec(request).exec(finish("acknowledgement"))
-    else exec(request)
-  }
+    if (Settings.experiment)
+        exec(begin("acknowledgment")).exec(request).exec(finish("acknowledgement"))
+      else exec(request)
+    }
 
   def prepare(consumer: String): ChainBuilder = exec { session =>
     session
@@ -190,7 +187,7 @@ object Requests {
         "authHeader",
         Authentication.header(
           session("vrn").as[String],
-          session("tokenEnv").asOption[String].getOrElse(""))
+          session("tokenEnv").asOption[String].getOrElse("")
       )
     )
   }

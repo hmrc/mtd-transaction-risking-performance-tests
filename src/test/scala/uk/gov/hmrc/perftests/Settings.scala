@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.perftests
 
-import java.net.URI
+import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
 import uk.gov.hmrc.performance.conf.Configuration
 
@@ -41,7 +41,7 @@ object Settings extends Configuration {
   val label = if (smoke || requested.isEmpty) "year-one-peak" else requested
 
   require(Set("year-one-peak", "mature-peak", "soak", "spike", "capacity",
-    "consumer-limits", "downstream limits")(label), "Select one supported perftest.labels value")
+    "consumer-limits", "downstream-limits")(label), "Select one supported perftest.labels value")
 
   val profile = if (smoke) "smoke" else label
   val experiment = !smoke && Set("spike", "capacity", "consumer-limits", "downstream-limits")(label)
@@ -102,7 +102,7 @@ object Settings extends Configuration {
 
   Files.createDirectories(out)
   Files.write(out.resolve("setup.txt"),
-    s"profile=$profile\ntopology\nCapacity conclusions require confirmed dependencies and telemetry.\n"
+    s"profile=$profile\ntopology=$topology\nCapacity conclusions require confirmed dependencies and telemetry.\n"
       .getBytes(UTF_8))
 
 }

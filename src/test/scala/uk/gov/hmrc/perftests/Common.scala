@@ -25,7 +25,7 @@ object Common extends ServicesConfiguration {
   private def validate(name: String): Unit = {
     val host = readProperty(s"services.$name.host", "").trim
     require(host.nonEmpty && !host.startsWith("SET-"),
-      s"Set services.$name.host in ${if (runLocal) "services-local.conf}" else "services.conf"}")
+      s"Set services.$name.host in ${if (runLocal) "services-local.conf" else "services.conf"}")
   }
 
   def validateService(): Unit = validate("mtd-transaction-risking")

@@ -32,7 +32,7 @@ object Authentication {
   private def login(vrn: String, credId: String): Unit = {
     val body =
       s"""{
-      "credId":$credId", "affinityGroup":"Organisation", "credentialRole":"User",
+      "credId":"$credId", "affinityGroup":"Organisation", "credentialRole":"User",
       "credentialStrength":"strong", "confidenceLevel":50, "excludeGnapToken":true,
       "enrolments":[{"key":"HMRC-MTD-VAT","state":"Activated",
         "identifiers":[{"key":"VRN","value":"$vrn"}]}]
@@ -63,7 +63,7 @@ object Authentication {
       users.foreach { case (vrn, cred) => login(vrn, cred) }
 
       val interval = Settings.seconds("authRefreshSeconds", 600)
-      val executor = Executors.newSingleThreadExecutor((task: Runnable) => {
+      val executor = Executors.newSingleThreadScheduledExecutor((task: Runnable) => {
         val thread = new Thread(task, "test-login-refresh")
         thread.setDaemon(true)
         thread
