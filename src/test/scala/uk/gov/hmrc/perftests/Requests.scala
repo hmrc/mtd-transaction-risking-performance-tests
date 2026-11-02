@@ -167,7 +167,7 @@ object Requests {
           .check(status.is(204))
 
     if (Settings.experiment)
-        exec(begin("acknowledgment")).exec(request).exec(finish("acknowledgement"))
+        exec(begin("acknowledgement")).exec(request).exec(finish("acknowledgement"))
       else exec(request)
     }
 
