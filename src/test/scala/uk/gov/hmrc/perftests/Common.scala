@@ -19,22 +19,15 @@ package uk.gov.hmrc.perftests
 import uk.gov.hmrc.performance.conf.ServicesConfiguration
 
 object Common extends ServicesConfiguration {
-
   val baseUrl: String = baseUrlFor("mtd-transaction-risking")
+  lazy val loginUrl: String = baseUrlFor("auth-login-api") + "/government-gateway/session/login"
 
-  val Individual: String = "Individual"
-  val Organisation: String = "Organisation"
-  val Agent: String = "Agent"
+  private def validate(name: String): Unit = {
+    val host = readProperty(s"services.$name.host", "").trim
+    require(host.nonEmpty && !host.startsWith("SET-"),
+      s"Set services.$name.host in ${if (runLocal) "services-local.conf" else "services.conf"}")
+  }
 
-  val commonHeaders: Map[String, String] =
-    Map("Accept" -> s"application/vnd.hmrc.1.0+json",
-      "User-Agent" -> "mtd-transaction-risking",
-      "X-Correlation-Id" -> "test-correlation-id",
-      "Authorization" -> s"#{bearerToken}",
-      "Content-Type" -> "application/json")
-
-  val headersInsolvent: Map[String, String] =
-    Map("Accept" -> s"application/vnd.hmrc.1.0+json",
-      "Content-Type" -> "application/json")
-
+  def validateService(): Unit = validate("mtd-transaction-risking")
+  def validationLogin(): Unit = validate("auth-login-api")
 }
