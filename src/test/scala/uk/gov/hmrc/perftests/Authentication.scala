@@ -6,12 +6,33 @@ import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, Executors, ScheduledExecutorService, TimeUnit}
 import scala.util.control.NonFatal
+import java.io.IOException
 
 object Authentication {
   private val tokens = new ConcurrentHashMap[String, String]()
   @volatile private var problem: Option[String] = None
   private var refresher: Option[ScheduledExecutorService] = None
-  private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
+  private def sendLogin(
+    request: HttpRequest,
+    attempt: Int = 1
+  ): HttpResponse[Void] = {
+    try client.send(request, HttpResponse.BodyHandlers.discarding())
+    catch {
+      case error: IOException if attempt < 3 =>
+        System.err.println(
+          s"Test login send attempt $attempt/3 failed: ${ioFailureDetail(error); retrying}"
+        )
+        TimeUnit.SECONDS.sleep(attempt.toLong)
+        client = newClient()
+        sendLogin(request, attempt + 1)
+
+      case error: IOException =>
+        System.err.println(
+          s"Test login failed after $attempt send attempts: ${ioFailureDetail(error)}"
+        )
+        throw error
+    }
+  }
 
   def externalToken(variable: String): String = {
     val token = sys.env.getOrElse(variable, "").trim
@@ -44,7 +65,7 @@ object Authentication {
       .POST(HttpRequest.BodyPublishers.ofString(body))
       .build()
 
-    val response = client.send(request, HttpResponse.BodyHandlers.discarding())
+    val response = sendLogin(request)
     require(response.statusCode() == 201, s"Test login failed: HTTP ${response.statusCode()}")
 
     val bearer = response.headers().firstValue("Authorization").orElse("").trim
