@@ -12,6 +12,17 @@ object Authentication {
   private val tokens = new ConcurrentHashMap[String, String]()
   @volatile private var problem: Option[String] = None
   private var refresher: Option[ScheduledExecutorService] = None
+  private def newClient(): HttpClient =
+    HttpClient.newBuilder()
+      .connectTimeout(Duration.ofSeconds(10))
+      .build()
+  @volatile private var client = newClient()
+  private def ioFailureDetail(error: IOException): String =
+    Iterator.iterate[Throwable](error)(_.getCause)
+      .takeWhile(_ != null)
+      .take(6)
+      .map(_.getClass.getSimpleName)
+      .mkString(" -> ")
   private def sendLogin(
     request: HttpRequest,
     attempt: Int = 1
@@ -20,7 +31,7 @@ object Authentication {
     catch {
       case error: IOException if attempt < 3 =>
         System.err.println(
-          s"Test login send attempt $attempt/3 failed: ${ioFailureDetail(error); retrying}"
+          s"Test login send attempt $attempt/3 failed: ${ioFailureDetail(error)}; retrying}"
         )
         TimeUnit.SECONDS.sleep(attempt.toLong)
         client = newClient()
@@ -93,7 +104,11 @@ object Authentication {
       refresher = Some(executor)
       executor.scheduleWithFixedDelay(new Runnable {
         override def run(): Unit = if (problem.isEmpty) {
-          try users.foreach { case (vrn, cred) => login(vrn, cred) }
+          try {
+            println("Test login renewal started")
+            users.foreach { case (vrn, cred) => login(vrn, cred)}
+            println("Test login renewal succeeded")
+          }
           catch {
             case NonFatal(error) =>
               val message = Option(error.getMessage).getOrElse("")
@@ -105,9 +120,9 @@ object Authentication {
                   message.stripPrefix("requirement failed: ")
                 else if (
                   message ==
-                    "requirement failed: Test login returned no valid Authorisation header"
+                    "requirement failed: Test login returned no valid Authorization header"
                 )
-                  "Test login returned no valid Authorisation header"
+                  "Test login returned no valid Authorization header"
                 else
                   error.getClass.getSimpleName
 
