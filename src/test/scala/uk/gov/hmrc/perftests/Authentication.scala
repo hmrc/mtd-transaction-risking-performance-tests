@@ -31,7 +31,7 @@ object Authentication {
     catch {
       case error: IOException if attempt < 3 =>
         System.err.println(
-          s"Test login send attempt $attempt/3 failed: ${ioFailureDetail(error)}; retrying}"
+          s"Test login send attempt $attempt/3 failed: ${ioFailureDetail(error)}; retrying"
         )
         TimeUnit.SECONDS.sleep(attempt.toLong)
         client = newClient()
