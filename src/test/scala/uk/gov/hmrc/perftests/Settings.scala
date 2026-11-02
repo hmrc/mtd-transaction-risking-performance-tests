@@ -21,9 +21,8 @@ import java.nio.file.{Files, Paths}
 import uk.gov.hmrc.performance.conf.Configuration
 
 object Settings extends Configuration {
-
   def text(key: String, default: String): String =
-    readProperty(s"api.$key", default)
+    readProperty(s"api.$key", default).trim
 
   def number(key: String, default: Double): Double = {
     val n = text(key, default.toString).toDouble
@@ -37,45 +36,23 @@ object Settings extends Configuration {
     n
   }
 
-  val label = readProperty("perftest.labels", "year-one-peak")
-
-  require(
-    Set(
-      "year-one-peak",
-      "mature-peak",
-      "soak",
-      "spike",
-      "capacity",
-      "consumer-limits",
-      "downstream-limits"
-    ) (label),
-    "Select one supported perftest.labels.value"
-  )
-
   val smoke = readProperty("perftest.runSmokeTest", "false").toBoolean
+  private val requested = readProperty("perftest.labels", "").trim
+  val label = if (smoke || requested.isEmpty) "year-one-peak" else requested
+
+  require(Set("year-one-peak", "mature-peak", "soak", "spike", "capacity",
+    "consumer-limits", "downstream limits")(label), "Select one supported perftest.labels value")
+
   val profile = if (smoke) "smoke" else label
+  val experiment = !smoke && Set("spike", "capacity", "consumer-limits", "downstream-limits")(label)
+  val consumerLimits = !smoke && label == "consumer-limits"
 
-  val localHost =
-    Set("localhost", "127.0.0.1", "[::1]")(
-      URI.create(Common.baseUrl).getHost
-    )
+  val topology = text("topology", "unknown")
 
-  val auth = text("auth", (!runLocal || !localHost).toString).toBoolean
 
   require(
-    (runLocal && localHost) || auth,
-    "Remote tests require authentication"
-  )
-
-  val topology =
-    text(
-      "topology",
-      if (runLocal && localHost) "downstream-stub" else "unspecified"
-    )
-
-  require(
-    Set("downstream-stub", "integrated", "shortcut-stub")(topology),
-    "Set api.topology explicitly for remote tests"
+    Set("unknown", "downstream-stub", "integrated", "shortcut-stub")(topology),
+    "api.topology must be unknown, downstream-stub, integrated or shortcut-stub"
   )
 
   require(
@@ -83,37 +60,29 @@ object Settings extends Configuration {
     "Shortcut stubs are only suitable for smoke tests"
   )
 
+  if(!smoke && Set("capacity", "consumer-limits", "downstream-limits")(label))
+    require(topology != "unknown", "Confirm api.topology before a capacity or rate-limit experiment")
+
   val prefix = text("pathPrefix", "").stripSuffix("/")
+  require(prefix.isEmpty || prefix.startsWith("/"), "api.pathPrefix must start with /")
 
-  require(
-    prefix.isEmpty || prefix.startsWith("/"),
-    "api.pathPrefix must start with /"
-  )
-
-  val data = readProperty("testData.normal", "data/local.csv")
-
-  val dataB =
-    readProperty("testData.consumerB", "data/private-consumer-b.csv")
-
+  val data = readProperty("testData.consumerA", "data/consumer-a.csv")
+  val dataB = readProperty("testData.consumerB", "data/consumer-b.csv")
   val timeout = seconds("timeoutSeconds", 10)
   val p95 = number("p95Ms", 1000)
   val p99 = number("p99Ms", 2000)
+  val window = seconds("windowSeconds", 30)
 
-  val errorPct =
-    readProperty("perftest.percentageFailureThreshold", "1").toDouble
+  val errorPct = readProperty("perftest.percentageFailureThreshold", "1").toInt
 
   require(
     errorPct >= 0 && errorPct < 100,
     "Failure threshold must be in [0,100]"
   )
 
-  val window = seconds("windowSeconds", 30)
-
-  if (label == "consumer-limits") {
-    require(
-      auth,
-      "Consumer limits require authenticated, distinct application identified"
-    )
+  if (consumerLimits) {
+    require(text("consumerApplicationsConfirmed", "false").toBoolean,
+      "Confirm two distinct OAuth applications and the route enforcing their quotas")
     number("consumerLimitRps", 0)
     number("consumerBLimitRps", 0)
     seconds("limitWindowSeconds", 0)
@@ -128,9 +97,12 @@ object Settings extends Configuration {
   }
 
   val out = Paths.get(
-    text("out", s"target/evidence/$profile-${System.currentTimeMillis()}")
+    text("out", s"target/gatling-evidence/$profile-${System.currentTimeMillis()}")
   )
 
   Files.createDirectories(out)
+  Files.write(out.resolve("setup.txt"),
+    s"profile=$profile\ntopology\nCapacity conclusions require confirmed dependencies and telemetry.\n"
+      .getBytes(UTF_8))
 
 }

@@ -20,4 +20,14 @@ import uk.gov.hmrc.performance.conf.ServicesConfiguration
 
 object Common extends ServicesConfiguration {
   val baseUrl: String = baseUrlFor("mtd-transaction-risking")
+  lazy val loginUrl: String = baseUrlFor("auth-login-api") + "/government-gateway/session/login"
+
+  private def validate(name: String): Unit = {
+    val host = readProperty(s"services.$name.host", "").trim
+    require(host.nonEmpty && !host.startsWith("SET-"),
+      s"Set services.$name.host in ${if (runLocal) "services-local.conf}" else "services.conf"}")
+  }
+
+  def validateService(): Unit = validate("mtd-transaction-risking")
+  def validationLogin(): Unit = validate("auth-login-api")
 }
